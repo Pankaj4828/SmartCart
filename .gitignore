@@ -1,0 +1,79 @@
+# =========================
+# Environment / Secrets
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# Node / React
+# =========================
+node_modules/
+dist/
+build/
+.npm/
+*.log
+
+# =========================
+# Python / FastAPI
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# =========================
+# Terraform
+# =========================
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+*.tfvars
+*.tfvars.json
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Keep example Terraform variables
+!terraform/**/.example.tfvars
+
+# =========================
+# Kubernetes
+# =========================
+*.secret.yaml
+*.secret.yml
+
+# =========================
+# Ollama
+# =========================
+ollama/models/
+
+# =========================
+# IDE / OS
+# =========================
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# =========================
+# Coverage
+# =========================
+coverage/
+htmlcov/
+.coverage
+.coverage.*
+
+# =========================
+# Temporary files
+# =========================
+*.tmp
+*.temp
+*.swp
