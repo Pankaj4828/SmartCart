@@ -1,0 +1,345 @@
+.admin-dashboard-page {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 42px 42px 70px;
+}
+
+.admin-dashboard-header {
+  margin-bottom: 28px;
+}
+
+.admin-dashboard-header h1 {
+  margin: 5px 0 8px;
+  font-size: 2rem;
+  letter-spacing: -0.03em;
+}
+
+.admin-dashboard-header p {
+  margin: 0;
+  color: #70747d;
+}
+
+.admin-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.admin-stat-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  min-height: 130px;
+  padding: 21px;
+  box-sizing: border-box;
+  border: 1px solid #e5e6e9;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 5px 18px rgba(20, 24, 30, 0.03);
+}
+
+.admin-stat-icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  place-items: center;
+  border-radius: 10px;
+  background: #f1f2f4;
+  color: #202329;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.admin-stat-card > div:last-child {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-stat-card span {
+  color: #858991;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.admin-stat-card strong {
+  margin-top: 5px;
+  color: #17191c;
+  font-size: 1.55rem;
+  letter-spacing: -0.03em;
+}
+
+.admin-stat-card small {
+  margin-top: 5px;
+  color: #858991;
+  font-size: 0.72rem;
+}
+
+.admin-dashboard-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.admin-dashboard-card {
+  border: 1px solid #e5e6e9;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 5px 18px rgba(20, 24, 30, 0.03);
+}
+
+.admin-dashboard-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 21px;
+  border-bottom: 1px solid #ececef;
+}
+
+.admin-card-eyebrow {
+  color: #9699a1;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.admin-dashboard-card-header h2 {
+  margin: 5px 0 0;
+  font-size: 1rem;
+  letter-spacing: -0.01em;
+}
+
+.admin-card-count {
+  color: #858991;
+  font-size: 0.72rem;
+}
+
+.admin-recent-order {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 15px 21px;
+  border-bottom: 1px solid #eeeeef;
+}
+
+.admin-recent-order:last-child {
+  border-bottom: 0;
+}
+
+.admin-recent-order-main {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  min-width: 0;
+}
+
+.admin-recent-order-main > strong {
+  width: 38px;
+  color: #666a72;
+  font-size: 0.8rem;
+}
+
+.admin-recent-order-main > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.admin-recent-order-main > div strong {
+  font-size: 0.82rem;
+}
+
+.admin-recent-order-main > div span {
+  color: #858991;
+  font-size: 0.7rem;
+}
+
+.admin-recent-order-side {
+  display: flex;
+  align-items: flex-end;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.admin-recent-order-side > strong {
+  font-size: 0.8rem;
+}
+
+.admin-dashboard-status {
+  display: inline-flex;
+  padding: 5px 8px;
+  border-radius: 999px;
+  font-size: 0.63rem;
+  font-weight: 800;
+}
+
+.admin-status-summary {
+  padding: 8px 21px 16px;
+}
+
+.admin-status-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 0;
+  border-bottom: 1px solid #eeeeef;
+}
+
+.admin-status-summary-row:last-child {
+  border-bottom: 0;
+}
+
+.admin-status-summary-row > div {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #4f535b;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.admin-status-summary-row > strong {
+  font-size: 0.82rem;
+}
+
+.admin-status-dot-large {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.status-dot-placed {
+  background: #d99a19;
+}
+
+.status-dot-confirmed {
+  background: #4c78bd;
+}
+
+.status-dot-shipped {
+  background: #715dc0;
+}
+
+.status-dot-out_for_delivery {
+  background: #258b72;
+}
+
+.status-dot-delivered {
+  background: #31824e;
+}
+
+.status-dot-cancelled {
+  background: #c24c4c;
+}
+
+.status-placed {
+  background: #fff4dc;
+  color: #946200;
+}
+
+.status-confirmed {
+  background: #e9f1ff;
+  color: #315fa8;
+}
+
+.status-shipped {
+  background: #eeeaff;
+  color: #5d49a8;
+}
+
+.status-out_for_delivery {
+  background: #e9f8f4;
+  color: #217764;
+}
+
+.status-delivered {
+  background: #e9f8ed;
+  color: #247442;
+}
+
+.status-cancelled {
+  background: #fff0f0;
+  color: #ad3939;
+}
+
+.admin-platform-overview {
+  margin-bottom: 20px;
+}
+
+.admin-platform-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.admin-platform-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 21px;
+  border-right: 1px solid #eeeeef;
+}
+
+.admin-platform-grid > div:last-child {
+  border-right: 0;
+}
+
+.admin-platform-grid span {
+  color: #858991;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.admin-platform-grid strong {
+  font-size: 1.2rem;
+}
+
+.admin-dashboard-loading {
+  min-height: 400px;
+  display: grid;
+  place-items: center;
+  color: #777b83;
+}
+
+.admin-dashboard-empty {
+  padding: 45px 20px;
+  text-align: center;
+  color: #858991;
+  font-size: 0.82rem;
+}
+
+@media (max-width: 1050px) {
+  .admin-stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .admin-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .admin-dashboard-page {
+    padding: 30px 20px 60px;
+  }
+
+  .admin-stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-platform-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .admin-platform-grid > div:nth-child(2) {
+    border-right: 0;
+  }
+
+  .admin-platform-grid > div {
+    border-bottom: 1px solid #eeeeef;
+  }
+}

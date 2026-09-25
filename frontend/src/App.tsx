@@ -1,131 +1,194 @@
+import { useState } from 'react'
+
+import {
+  Routes,
+  Route,
+  useLocation,
+} from 'react-router-dom'
+
 import './App.css'
 
-const products = [
-  {
-    name: 'Smart Laptop',
-    category: 'Computers',
-    price: '₹64,999',
-    icon: '💻',
-  },
-  {
-    name: 'Wireless Headphones',
-    category: 'Audio',
-    price: '₹4,999',
-    icon: '🎧',
-  },
-  {
-    name: 'Smart Watch',
-    category: 'Wearables',
-    price: '₹7,999',
-    icon: '⌚',
-  },
-]
+import Navbar from './components/layout/Navbar'
+import Footer from './components/layout/Footer'
+
+import AdminLayout from './components/admin/AdminLayout'
+import AdminRoute from './components/auth/AdminRoute'
+
+import Hero from './components/home/Hero'
+import AISection from './components/home/AISection'
+
+import ProductSection from './components/products/ProductSection'
+
+import ProductDetailsPage from './pages/ProductDetailsPage'
+import CartPage from './pages/CartPage'
+import CheckoutPage from './pages/CheckoutPage'
+import PaymentPage from './pages/PaymentPage'
+import OrderSuccessPage from './pages/OrderSuccessPage'
+import OrdersPage from './pages/OrdersPage'
+import OrderDetailsPage from './pages/OrderDetailsPage'
+import LoginPage from './pages/LoginPage'
+import RegisterPage from './pages/RegisterPage'
+import WishlistPage from './pages/WishlistPage'
+
+import AdminProductsPage from './pages/admin/AdminProductsPage'
+import AdminOrdersPage from './pages/admin/AdminOrdersPage'
+import AdminUsersPage from './pages/admin/AdminUsersPage'
+import AdminDashboardPage from './pages/admin/AdminDashboardPage'
 
 function App() {
+  const location = useLocation()
+
+  const isAdminRoute =
+    location.pathname.startsWith('/admin')
+
+  const [search, setSearch] =
+    useState('')
+
+  const appRoutes = (
+    <Routes>
+      <Route
+        path="/"
+        element={
+          <>
+            <main>
+              <Hero />
+
+              <ProductSection
+                search={search}
+                onSearchChange={
+                  setSearch
+                }
+              />
+
+              <AISection />
+            </main>
+          </>
+        }
+      />
+
+      <Route
+        path="/products/:productId"
+        element={
+          <ProductDetailsPage />
+        }
+      />
+
+      <Route
+        path="/cart"
+        element={
+          <CartPage />
+        }
+      />
+
+      <Route
+        path="/checkout"
+        element={
+          <CheckoutPage />
+        }
+      />
+
+      <Route
+        path="/checkout/payment"
+        element={
+          <PaymentPage />
+        }
+      />
+
+      <Route
+        path="/order-success"
+        element={
+          <OrderSuccessPage />
+        }
+      />
+
+      <Route
+        path="/orders"
+        element={
+          <OrdersPage />
+        }
+      />
+
+      <Route
+        path="/orders/:orderId"
+        element={
+          <OrderDetailsPage />
+        }
+      />
+
+      <Route
+        path="/login"
+        element={
+          <LoginPage />
+        }
+      />
+
+      <Route
+        path="/register"
+        element={
+          <RegisterPage />
+        }
+      />
+
+      <Route
+        path="/wishlist"
+        element={
+          <WishlistPage />
+        }
+      />
+
+      <Route
+        element={
+          <AdminRoute />
+        }
+      >
+        <Route
+          path="/admin"
+          element={
+            <AdminDashboardPage />
+          }
+        />
+        <Route
+          path="/admin/products"
+          element={
+            <AdminProductsPage />
+          }
+        />
+        <Route
+          path="/admin/orders"
+          element={
+            <AdminOrdersPage />
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            <AdminUsersPage />
+          }
+        />
+      </Route>
+    </Routes>
+  )
+
   return (
     <div className="app">
-      <header className="navbar">
-        <div className="brand">
-          <span className="brand-icon">🛒</span>
-          <span>SmartCart</span>
-        </div>
+      {isAdminRoute ? (
+        <AdminLayout>
+          {appRoutes}
+        </AdminLayout>
+      ) : (
+        <>
+          <Navbar
+            search={search}
+            onSearchChange={
+              setSearch
+            }
+          />
 
-        <nav className="nav-links">
-          <a href="#products">Products</a>
-          <a href="#orders">Orders</a>
-          <a href="#ai">AI Assistant</a>
-        </nav>
+          {appRoutes}
 
-        <button className="cart-button">
-          🛒 Cart
-        </button>
-      </header>
-
-      <main>
-        <section className="hero">
-          <div className="hero-content">
-            <span className="badge">AI-Powered Shopping</span>
-
-            <h1>
-              Shop smarter with
-              <span> SmartCart</span>
-            </h1>
-
-            <p>
-              Discover products, get intelligent recommendations,
-              and find what you need with your AI shopping assistant.
-            </p>
-
-            <div className="hero-actions">
-              <button className="primary-button">
-                Explore Products
-              </button>
-
-              <button className="secondary-button">
-                Ask AI Assistant
-              </button>
-            </div>
-          </div>
-        </section>
-
-        <section className="products-section" id="products">
-          <div className="section-heading">
-            <div>
-              <span className="section-label">Discover</span>
-              <h2>Featured Products</h2>
-            </div>
-
-            <button className="view-all-button">
-              View all →
-            </button>
-          </div>
-
-          <div className="product-grid">
-            {products.map((product) => (
-              <article className="product-card" key={product.name}>
-                <div className="product-image">
-                  <span>{product.icon}</span>
-                </div>
-
-                <div className="product-info">
-                  <span className="product-category">
-                    {product.category}
-                  </span>
-
-                  <h3>{product.name}</h3>
-
-                  <div className="product-footer">
-                    <strong>{product.price}</strong>
-
-                    <button className="add-button">
-                      Add to cart
-                    </button>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="ai-section" id="ai">
-          <div>
-            <span className="section-label">Smart Shopping</span>
-            <h2>Your AI Shopping Assistant</h2>
-            <p>
-              Ask questions about products, compare options,
-              and get recommendations based on what you're looking for.
-            </p>
-          </div>
-
-          <button className="primary-button">
-            Start Chat →
-          </button>
-        </section>
-      </main>
-
-      <footer>
-        <p>© 2026 SmartCart · AI-Powered E-Commerce Platform</p>
-      </footer>
+          <Footer />
+        </>
+      )}
     </div>
   )
 }
