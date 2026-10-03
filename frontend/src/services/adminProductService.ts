@@ -3,7 +3,7 @@ import type {
   ProductCreate,
 } from '../types/product'
 
-const API_BASE_URL = 'http://127.0.0.1:8000'
+const API_BASE_URL = '/api'
 
 const TOKEN_KEY = 'smartcart-access-token'
 
