@@ -1,0 +1,9 @@
+# SmartCart application namespace.
+# Keeping application resources in their own namespace
+# gives us logical separation from Kubernetes/system resources.
+
+apiVersion: v1
+kind: Namespace
+
+metadata:
+  name: smartcart

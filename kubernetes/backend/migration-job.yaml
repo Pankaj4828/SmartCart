@@ -1,0 +1,57 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: smartcart-db-migration
+  namespace: smartcart
+
+spec:
+  # Retry the migration if the Job temporarily fails.
+  backoffLimit: 3
+
+  template:
+    metadata:
+      labels:
+        app: smartcart-db-migration
+
+    spec:
+      # Jobs run once and then finish.
+      restartPolicy: Never
+
+      containers:
+        - name: migration
+          # Use the same backend image that already contains
+          # our application and Alembic migration files.
+          image: smartcart-backend:1.2
+          imagePullPolicy: IfNotPresent
+
+          # The container starts in /app.
+          # alembic.ini is located there in our backend image.
+          command:
+            - alembic
+            - upgrade
+            - head
+
+          # Application configuration comes from our ConfigMap.
+          envFrom:
+            - configMapRef:
+                name: smartcart-config
+
+          # Database credentials and JWT secret come from our Secret.
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: smartcart-secrets
+                  key: POSTGRES_USER
+
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: smartcart-secrets
+                  key: POSTGRES_PASSWORD
+
+            - name: JWT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: smartcart-secrets
+                  key: JWT_SECRET_KEY

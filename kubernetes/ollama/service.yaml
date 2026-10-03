@@ -1,0 +1,25 @@
+# SmartCart Ollama Service.
+#
+# Provides a stable internal DNS name for Ollama.
+#
+# Backend connects using:
+# http://ollama:11434
+
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: ollama
+  namespace: smartcart
+
+spec:
+  # Ollama only needs to be accessible inside the cluster.
+  type: ClusterIP
+
+  selector:
+    app: ollama
+
+  ports:
+    - name: http
+      port: 11434
+      targetPort: 11434

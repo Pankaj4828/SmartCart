@@ -1,0 +1,111 @@
+# PostgreSQL StatefulSet for SmartCart.
+#
+# PostgreSQL is a stateful workload, so we use a StatefulSet
+# instead of a Deployment.
+#
+# The StatefulSet provides:
+# - Stable Pod identity: postgres-0
+# - Persistent storage through volumeClaimTemplates
+# - Stable relationship between the Pod and its storage
+
+apiVersion: apps/v1
+kind: StatefulSet
+
+metadata:
+  name: postgres
+  namespace: smartcart
+
+spec:
+  # This local SmartCart environment uses one PostgreSQL instance.
+  replicas: 1
+
+  # The Service name is used as the network identity
+  # for the StatefulSet.
+  serviceName: postgres
+
+  selector:
+    matchLabels:
+      app: postgres
+
+  template:
+    metadata:
+      labels:
+        app: postgres
+
+    spec:
+      containers:
+        - name: postgres
+
+          # Same PostgreSQL version used by our Docker Compose setup.
+          image: postgres:17-alpine
+
+          ports:
+            - containerPort: 5432
+
+          env:
+            # Database name comes from the common ConfigMap.
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: smartcart-config
+                  key: POSTGRES_DB
+
+            # Database username comes from the common Secret.
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: smartcart-secrets
+                  key: POSTGRES_USER
+
+            # Database password comes from the common Secret.
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: smartcart-secrets
+                  key: POSTGRES_PASSWORD
+
+          # PostgreSQL stores its database files here.
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+
+          # Requests help Kubernetes schedule the PostgreSQL Pod.
+          # Limits prevent it from consuming unlimited resources.
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+
+          # Check whether PostgreSQL is accepting connections.
+          #
+          # If PostgreSQL becomes unhealthy and this repeatedly fails,
+          # Kubernetes can restart the container.
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - smartcart
+                - -d
+                - smartcart
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
+  # The StatefulSet creates a PVC for the PostgreSQL Pod.
+  volumeClaimTemplates:
+
+    - metadata:
+        name: postgres-data
+
+      spec:
+        accessModes:
+          - ReadWriteOnce
+
+        resources:
+          requests:
+            storage: 2Gi
+
+        storageClassName: standard

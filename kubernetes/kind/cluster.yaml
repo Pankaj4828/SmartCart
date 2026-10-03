@@ -1,0 +1,18 @@
+# SmartCart local Kubernetes cluster
+# KIND runs each Kubernetes node as a Docker container.
+
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+
+# Give the cluster a project-specific name.
+name: smartcart
+
+nodes:
+  # Kubernetes control-plane node.
+  # It manages the cluster and Kubernetes API.
+  - role: control-plane
+
+  # Worker nodes run application Pods.
+  - role: worker
+
+  - role: worker

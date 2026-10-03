@@ -1,0 +1,84 @@
+# SmartCart Ollama Deployment.
+#
+# Ollama provides the local AI model used by SmartCart.
+# The backend reaches Ollama through the Kubernetes Service:
+# http://ollama:11434
+#
+# Ollama model files are stored in a persistent volume so
+# downloaded models survive Pod recreation.
+
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: ollama
+  namespace: smartcart
+
+spec:
+  # One Ollama instance is enough for our local environment.
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: ollama
+
+  template:
+    metadata:
+      labels:
+        app: ollama
+
+    spec:
+      containers:
+        - name: ollama
+
+          # Same Ollama image used in our Docker Compose setup.
+          image: ollama/ollama:latest
+
+          ports:
+            - containerPort: 11434
+
+          # Ollama stores downloaded models under /root/.ollama.
+          volumeMounts:
+            - name: ollama-data
+              mountPath: /root/.ollama
+
+          # Ollama performs local LLM inference, so it needs more
+          # CPU and memory than the frontend and backend.
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+         
+          # Ollama can take some time to become ready.
+          # Give it time before Kubernetes starts evaluating
+          # liveness and readiness.
+          startupProbe:
+            httpGet:
+              path: /api/tags
+              port: 11434
+            failureThreshold: 30
+            periodSeconds: 5
+
+          # Checks whether the Ollama API is still responding.
+          livenessProbe:
+            httpGet:
+              path: /api/tags
+              port: 11434
+            periodSeconds: 10
+
+          # Controls whether the Ollama Pod is considered ready
+          # to receive requests from the backend.
+          readinessProbe:
+            httpGet:
+              path: /api/tags
+              port: 11434
+            periodSeconds: 10
+
+      # Persistent storage for Ollama models.
+      volumes:
+        - name: ollama-data
+          persistentVolumeClaim:
+            claimName: ollama-pvc

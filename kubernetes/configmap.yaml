@@ -1,0 +1,25 @@
+# Common non-sensitive configuration for SmartCart.
+#
+# Resources inside the smartcart namespace can consume these
+# values through environment variables.
+
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: smartcart-config
+  namespace: smartcart
+
+data:
+  # PostgreSQL connection
+  POSTGRES_DB: "smartcart"
+  POSTGRES_HOST: "postgres"
+  POSTGRES_PORT: "5432"
+
+  # JWT configuration
+  JWT_ALGORITHM: "HS256"
+  JWT_ACCESS_TOKEN_EXPIRE_MINUTES: "60"
+
+  # Ollama configuration
+  OLLAMA_URL: "http://ollama:11434"
+  OLLAMA_MODEL: "tinyllama"

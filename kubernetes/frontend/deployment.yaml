@@ -1,0 +1,71 @@
+# SmartCart Frontend Deployment.
+#
+# The frontend is a stateless React application served
+# by Nginx, so we use a Deployment.
+#
+# The Docker image already contains:
+# - React production build
+# - Nginx
+# - Nginx API proxy configuration
+
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: frontend
+  namespace: smartcart
+
+spec:
+  # Start with one frontend Pod.
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: frontend
+
+  template:
+    metadata:
+      labels:
+        app: frontend
+
+    spec:
+      containers:
+        - name: frontend
+
+          # This image was built locally and loaded into KIND.
+          image: smartcart-frontend:1.2
+
+          # Use the image already available on the KIND nodes.
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - containerPort: 80
+
+          # Nginx serving static React files needs relatively
+          # little CPU and memory.
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "32Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
+          # Nginx is the process serving the React application.
+          #
+          # Liveness:
+          # Is Nginx still running and responding
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+          # Readiness:
+          # Should this Pod receive traffic from the frontend Service?
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10

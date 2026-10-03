@@ -1,0 +1,27 @@
+# PostgreSQL Service for SmartCart.
+#
+# The Service gives PostgreSQL a stable DNS name inside
+# the Kubernetes cluster.
+#
+# Backend will connect using:
+# POSTGRES_HOST=postgres
+
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: postgres
+  namespace: smartcart
+
+spec:
+  # PostgreSQL is only needed by applications inside
+  # the Kubernetes cluster.
+  type: ClusterIP
+
+  selector:
+    app: postgres
+
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432

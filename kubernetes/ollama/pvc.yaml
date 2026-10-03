@@ -1,0 +1,23 @@
+# Persistent storage for Ollama models.
+#
+# The tinyllama model will be downloaded into this volume.
+# The volume keeps the model available if the Ollama Pod
+# is recreated.
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+
+metadata:
+  name: ollama-pvc
+  namespace: smartcart
+
+spec:
+  accessModes:
+    - ReadWriteOnce
+
+  resources:
+    requests:
+      storage: 5Gi
+
+  # KIND's local cluster provides the standard StorageClass.
+  storageClassName: standard
