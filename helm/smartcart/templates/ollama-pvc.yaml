@@ -1,0 +1,24 @@
+# Persistent storage for Ollama models.
+#
+# Based on the working Kubernetes PVC:
+# kubernetes/ollama/pvc.yaml
+#
+# The tinyllama model is stored here so it survives
+# Ollama Pod recreation.
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+
+metadata:
+  name: ollama-pvc
+
+spec:
+  accessModes:
+    - ReadWriteOnce
+
+  resources:
+    requests:
+      storage: {{ .Values.ollamaStorage }}
+
+  # KIND's local cluster provides the standard StorageClass.
+  storageClassName: standard

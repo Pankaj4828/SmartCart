@@ -1,0 +1,27 @@
+# SmartCart Backend Service.
+#
+# Based on the working Kubernetes Service:
+# kubernetes/backend/service.yaml
+#
+# The Service provides a stable internal network endpoint
+# for the FastAPI backend.
+
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: backend
+
+spec:
+  # ClusterIP makes the backend reachable only
+  # from inside the Kubernetes cluster.
+  type: ClusterIP
+
+  # Send traffic to Pods having this label.
+  selector:
+    app: backend
+
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000

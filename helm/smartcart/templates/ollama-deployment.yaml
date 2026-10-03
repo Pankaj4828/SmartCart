@@ -1,0 +1,78 @@
+# SmartCart Ollama Deployment.
+#
+# Based on the working Kubernetes Deployment:
+# kubernetes/ollama/deployment.yaml
+#
+# Ollama provides the local AI model used by SmartCart.
+
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: ollama
+
+spec:
+  # One Ollama instance is enough for our local environment.
+  replicas: {{ .Values.ollama.replicas }}
+
+  selector:
+    matchLabels:
+      app: ollama
+
+  template:
+    metadata:
+      labels:
+        app: ollama
+
+    spec:
+      containers:
+        - name: ollama
+
+          # Ollama image comes from values.yaml.
+          image: "{{ .Values.ollama.image.repository }}:{{ .Values.ollama.image.tag }}"
+
+          ports:
+            - containerPort: 11434
+
+          # Ollama stores downloaded models under /root/.ollama.
+          volumeMounts:
+            - name: ollama-data
+              mountPath: /root/.ollama
+
+          # Ollama performs local LLM inference, so it needs more
+          # CPU and memory than the frontend and backend.
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+
+          # Ollama can take some time to become ready.
+          startupProbe:
+            httpGet:
+              path: /api/tags
+              port: 11434
+            failureThreshold: 30
+            periodSeconds: 5
+
+          # Checks whether the Ollama API is still responding.
+          livenessProbe:
+            httpGet:
+              path: /api/tags
+              port: 11434
+            periodSeconds: 10
+
+          # Controls whether the Ollama Pod is considered ready.
+          readinessProbe:
+            httpGet:
+              path: /api/tags
+              port: 11434
+            periodSeconds: 10
+
+      # Persistent storage for Ollama models.
+      volumes:
+        - name: ollama-data
+          persistentVolumeClaim:
+            claimName: ollama-pvc

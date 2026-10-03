@@ -1,0 +1,36 @@
+# SmartCart Backend Horizontal Pod Autoscaler.
+#
+# Based on the working Kubernetes HPA:
+# kubernetes/backend/hpa.yaml
+#
+# HPA values are configurable through values.yaml.
+
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+
+metadata:
+  name: backend-hpa
+
+spec:
+  # Keep at least the configured minimum number
+  # of backend Pods running.
+  minReplicas: {{ .Values.hpa.minReplicas }}
+
+  # Allow Kubernetes to scale the backend
+  # up to the configured maximum.
+  maxReplicas: {{ .Values.hpa.maxReplicas }}
+
+  # HPA manages the backend Deployment.
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: backend
+
+  # Scale based on average CPU utilization.
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.hpa.cpuTarget }}

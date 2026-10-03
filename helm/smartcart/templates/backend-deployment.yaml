@@ -1,0 +1,109 @@
+# SmartCart FastAPI Backend Deployment.
+#
+# This template is based on the working Kubernetes Deployment:
+# kubernetes/backend/deployment.yaml
+#
+# Helm-specific values such as the image and replica count
+# come from values.yaml.
+
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: backend
+
+spec:
+  # Helm gets the desired replica count from values.yaml.
+  replicas: {{ .Values.backend.replicas }}
+
+  selector:
+    matchLabels:
+      app: backend
+
+  template:
+    metadata:
+      labels:
+        app: backend
+
+    spec:
+      containers:
+        - name: backend
+
+          # Build the image reference from values.yaml.
+          #
+          # Example:
+          # smartcart-backend:1.2
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+
+          # Use the image already available on the KIND node.
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - containerPort: 8000
+
+          # Load non-sensitive configuration from the common ConfigMap.
+          envFrom:
+            - configMapRef:
+                name: smartcart-config
+
+          # Load sensitive configuration from the common Secret.
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: smartcart-secrets
+                  key: POSTGRES_USER
+
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: smartcart-secrets
+                  key: POSTGRES_PASSWORD
+
+            - name: JWT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: smartcart-secrets
+                  key: JWT_SECRET_KEY
+
+          # Requests tell Kubernetes the minimum resources this
+          # container needs for scheduling.
+          #
+          # Limits define the maximum resources the container can use.
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+
+          # Checks whether the application has successfully started.
+          #
+          # Kubernetes gives the application time to start before
+          # liveness/readiness checks become active.
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            failureThreshold: 30
+            periodSeconds: 5
+
+          # Checks whether the application is still alive.
+          #
+          # If this repeatedly fails, Kubernetes restarts the container.
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            periodSeconds: 10
+
+          # Checks whether the application is ready to receive traffic.
+          #
+          # If this fails, Kubernetes removes the Pod from the
+          # Service endpoints but does not restart the container.
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            periodSeconds: 10

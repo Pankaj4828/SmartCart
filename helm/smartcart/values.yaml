@@ -1,0 +1,39 @@
+# Default values for the SmartCart Helm chart.
+
+backend:
+  image:
+    repository: smartcart-backend
+    tag: "1.2"
+  replicas: 1
+
+frontend:
+  image:
+    repository: smartcart-frontend
+    tag: "1.2"
+  replicas: 1
+
+ollama:
+  image:
+    repository: ollama/ollama
+    tag: latest
+  replicas: 1
+
+postgres:
+  image:
+    repository: postgres
+    tag: "17-alpine"
+  storage: 2Gi
+
+hpa:
+  minReplicas: 1
+  maxReplicas: 3
+  cpuTarget: 70
+
+ollamaStorage: 5Gi
+
+ingress:
+  enabled: true
+  className: nginx
+  host: smartcart-helm.local
+  proxyReadTimeout: "180"
+  proxySendTimeout: "180"

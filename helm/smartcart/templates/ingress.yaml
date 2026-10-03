@@ -1,0 +1,49 @@
+# SmartCart Ingress
+#
+# Provides the HTTP entry point for the SmartCart frontend.
+#
+# Request flow:
+#
+# Browser
+#   ↓
+# Nginx Ingress Controller
+#   ↓
+# frontend Service
+#   ↓
+# frontend Pod
+#
+# The frontend Nginx handles /api/* requests
+# and forwards them to the backend Service.
+
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+
+metadata:
+  name: smartcart
+
+  annotations:
+    # Ollama can take longer to generate a response on CPU.
+    # Allow the Ingress to wait for the backend response.
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "{{ .Values.ingress.proxyReadTimeout }}"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "{{ .Values.ingress.proxySendTimeout }}"
+
+spec:
+  # Use the nginx Ingress Controller installed through Helm.
+  ingressClassName: {{ .Values.ingress.className }}
+
+  rules:
+    # Give the Helm test deployment its own host.
+    # This avoids conflicting with the existing raw Kubernetes Ingress.
+    - host: {{ .Values.ingress.host }}
+      http:
+        paths:
+          # All SmartCart HTTP traffic goes to the frontend.
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80
+{{- end }}

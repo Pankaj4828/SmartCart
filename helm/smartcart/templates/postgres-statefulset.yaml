@@ -1,0 +1,108 @@
+# PostgreSQL StatefulSet for SmartCart.
+#
+# Based on the working Kubernetes StatefulSet:
+# kubernetes/postgres/statefulset.yaml
+#
+# PostgreSQL is stateful, so the StatefulSet and
+# volumeClaimTemplates are preserved.
+
+apiVersion: apps/v1
+kind: StatefulSet
+
+metadata:
+  name: postgres
+
+spec:
+  # Helm gets the desired replica count from values.yaml.
+  replicas: 1
+
+  # The Service name provides the stable network identity
+  # for the PostgreSQL StatefulSet.
+  serviceName: postgres
+
+  selector:
+    matchLabels:
+      app: postgres
+
+  template:
+    metadata:
+      labels:
+        app: postgres
+
+    spec:
+      containers:
+        - name: postgres
+
+          # PostgreSQL image is configurable through values.yaml.
+          image: "{{ .Values.postgres.image.repository }}:{{ .Values.postgres.image.tag }}"
+
+          ports:
+            - containerPort: 5432
+
+          env:
+            # Database name comes from the common ConfigMap.
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: smartcart-config
+                  key: POSTGRES_DB
+
+            # Database username comes from the common Secret.
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: smartcart-secrets
+                  key: POSTGRES_USER
+
+            # Database password comes from the common Secret.
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: smartcart-secrets
+                  key: POSTGRES_PASSWORD
+
+          # PostgreSQL stores its database files here.
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+
+          # Requests help Kubernetes schedule the PostgreSQL Pod.
+          # Limits prevent it from consuming unlimited resources.
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+
+          # Check whether PostgreSQL is accepting connections.
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - smartcart
+                - -d
+                - smartcart
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
+  # The StatefulSet creates the PostgreSQL PVC.
+  #
+  # This is intentionally kept as volumeClaimTemplates.
+  # Each PostgreSQL Pod gets its own persistent volume.
+  volumeClaimTemplates:
+
+    - metadata:
+        name: postgres-data
+
+      spec:
+        accessModes:
+          - ReadWriteOnce
+
+        resources:
+          requests:
+            storage: {{ .Values.postgres.storage }}
+
+        storageClassName: standard

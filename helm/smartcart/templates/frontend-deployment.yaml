@@ -1,0 +1,69 @@
+# SmartCart Frontend Deployment.
+#
+# Based on the working Kubernetes Deployment:
+# kubernetes/frontend/deployment.yaml
+#
+# Helm-specific values such as the image and replica count
+# come from values.yaml.
+
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: frontend
+
+spec:
+  # Helm gets the desired replica count from values.yaml.
+  replicas: {{ .Values.frontend.replicas }}
+
+  selector:
+    matchLabels:
+      app: frontend
+
+  template:
+    metadata:
+      labels:
+        app: frontend
+
+    spec:
+      containers:
+        - name: frontend
+
+          # Build the image reference from values.yaml.
+          image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}"
+
+          # Use the image already available on the KIND node.
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - containerPort: 80
+
+          # Nginx serving static React files needs relatively
+          # little CPU and memory.
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "32Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
+
+          # Nginx is the process serving the React application.
+          #
+          # Liveness:
+          # Is Nginx still running and responding?
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+          # Readiness:
+          # Should this Pod receive traffic from the frontend Service?
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10

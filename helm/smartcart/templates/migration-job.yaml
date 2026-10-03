@@ -1,0 +1,68 @@
+# SmartCart database migration Job.
+#
+# Based on the working Kubernetes Job:
+# kubernetes/backend/migration-job.yaml
+#
+# The Job uses the same backend image values as
+# the backend Deployment so the application code
+# and migration files always come from the same image.
+
+apiVersion: batch/v1
+kind: Job
+
+metadata:
+  name: smartcart-db-migration
+
+spec:
+  # Retry the migration if the Job temporarily fails.
+  backoffLimit: 3
+
+  template:
+    metadata:
+      labels:
+        app: smartcart-db-migration
+
+    spec:
+      # Jobs run once and then finish.
+      restartPolicy: Never
+
+      containers:
+        - name: migration
+
+          # Use the same backend image configured
+          # for the backend Deployment.
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+
+          imagePullPolicy: IfNotPresent
+
+          # The container starts in /app.
+          # alembic.ini is located there in our backend image.
+          command:
+            - alembic
+            - upgrade
+            - head
+
+          # Application configuration comes from our ConfigMap.
+          envFrom:
+            - configMapRef:
+                name: smartcart-config
+
+          # Database credentials and JWT secret come from our Secret.
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: smartcart-secrets
+                  key: POSTGRES_USER
+
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: smartcart-secrets
+                  key: POSTGRES_PASSWORD
+
+            - name: JWT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: smartcart-secrets
+                  key: JWT_SECRET_KEY

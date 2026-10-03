@@ -1,0 +1,26 @@
+# PostgreSQL Service for SmartCart.
+#
+# Based on the working Kubernetes Service:
+# kubernetes/postgres/service.yaml
+#
+# Provides the stable DNS name:
+# postgres:5432
+
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: postgres
+
+spec:
+  # PostgreSQL is only needed by applications
+  # inside the Kubernetes cluster.
+  type: ClusterIP
+
+  selector:
+    app: postgres
+
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
