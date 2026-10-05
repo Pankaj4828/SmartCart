@@ -96,19 +96,29 @@ jobs:
   docker-build:
     name: Docker Build & Security Scan
     runs-on: ubuntu-24.04
+
+    # Docker builds happen only after application validation succeeds.
     needs:
       - backend
       - frontend
 
+    # Required for uploading Trivy SARIF results
+    # to GitHub Code Scanning / Security.
     permissions:
       contents: read
+      security-events: write
 
     steps:
+      # 1. Checkout source code
       - name: Checkout repository
         uses: actions/checkout@v7
-
-      # Build the same backend image that we use in our local
-      # Docker/Kubernetes environment.
+      # This uses the same Dockerfile that we use locally
+      # and in our Kubernetes deployment.
+      #
+      # :ci is intentionally used because this image is only
+      # being validated here. We are NOT pushing it to a
+      # registry yet.
+      #
       - name: Build backend image
         run: |
           docker build \
@@ -116,8 +126,8 @@ jobs:
             -t smartcart-backend:ci \
             .
 
-      # Build the same frontend image that we use in our local
-      # Docker/Kubernetes environment.
+      # Again, this is the same Dockerfile used by our project.
+      #
       - name: Build frontend image
         run: |
           docker build \
@@ -125,10 +135,18 @@ jobs:
             -t smartcart-frontend:ci \
             .
 
-      # Scan the backend image for known OS and Python-library
-      # vulnerabilities.
+      # Trivy checks:
+      #   - OS packages
+      #   - Python/application libraries
+      #
+      # HIGH and CRITICAL vulnerabilities with an available
+      # fix will fail this CI job.
+      #
+      # SARIF is generated so GitHub can display the findings
+      # in the Security / Code Scanning area.
+      #
       - name: Scan backend image with Trivy
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           version: v0.75.0
           image-ref: smartcart-backend:ci
@@ -139,10 +157,23 @@ jobs:
           ignore-unfixed: true
           exit-code: 1
 
-      # Scan the frontend image for known OS and Node/library
-      # vulnerabilities.
+      # always() is important here.
+      #
+      # If Trivy finds a vulnerability and exits with code 1,
+      # the scan step fails. We still want the SARIF report
+      # uploaded so we can inspect the vulnerability.
+      #
+      - name: Upload backend Trivy report
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: trivy-backend.sarif
+
+      # The frontend image is also scanned for OS and
+      # application/library vulnerabilities.
+      #
       - name: Scan frontend image with Trivy
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           version: v0.75.0
           image-ref: smartcart-frontend:ci
@@ -153,9 +184,18 @@ jobs:
           ignore-unfixed: true
           exit-code: 1
 
-      # Preserve the security reports so we can inspect the
-      # exact vulnerabilities when a scan fails.
-      - name: Upload Trivy reports
+      # Upload even if the Trivy scan fails.
+      #
+      - name: Upload frontend Trivy report
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: trivy-frontend.sarif
+
+      # This gives us a downloadable copy of the reports
+      # in the GitHub Actions run.
+      #
+      - name: Upload Trivy reports as artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
