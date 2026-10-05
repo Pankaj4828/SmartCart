@@ -13,6 +13,31 @@ jobs:
     name: Backend Validation
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: smartcart
+          POSTGRES_USER: smartcart
+          POSTGRES_PASSWORD: ${{ secrets.CI_POSTGRES_PASSWORD }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U smartcart -d smartcart"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      POSTGRES_DB: smartcart
+      POSTGRES_USER: smartcart
+      POSTGRES_PASSWORD: ${{ secrets.CI_POSTGRES_PASSWORD }}
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: 5432
+      JWT_SECRET_KEY: ${{ secrets.CI_JWT_SECRET_KEY }}
+      JWT_ALGORITHM: HS256
+      JWT_ACCESS_TOKEN_EXPIRE_MINUTES: 60
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -28,6 +53,9 @@ jobs:
 
       - name: Verify backend import
         run: python -c "from backend.app.main import app; print('Backend import OK')"
+
+      - name: Run database migrations
+        run: alembic upgrade head
 
       - name: Run backend tests
         working-directory: backend
