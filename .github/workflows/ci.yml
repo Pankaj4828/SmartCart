@@ -158,7 +158,7 @@ jobs:
           vuln-type: os,library
           severity: HIGH,CRITICAL
           ignore-unfixed: true
-
+          limit-severities-for-sarif: true
           # pip 26.2+ contains an embedded CycloneDX SBOM
           # describing pip's vendored dependencies.
           #
@@ -203,6 +203,7 @@ jobs:
           output: trivy-frontend.sarif
           vuln-type: os,library
           severity: HIGH,CRITICAL
+          limit-severities-for-sarif: true
           ignore-unfixed: true
           exit-code: 1
 
