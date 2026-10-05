@@ -9,6 +9,7 @@ FROM node:24-alpine AS builder
 # Keep the frontend application inside /app/frontend.
 WORKDIR /app/frontend
 
+RUN apk upgrade --no-cache
 # Copy dependency files first.
 # Docker can reuse the npm install layer when application
 # source code changes but package files remain unchanged.
@@ -33,6 +34,10 @@ RUN npm run build
 # The final image only needs Nginx to serve the static files.
 # Node and the frontend source code are not needed at runtime.
 FROM nginx:alpine
+
+# Apply the latest security updates available for the
+# Alpine packages included in the Nginx runtime image.
+RUN apk upgrade --no-cache
 
 # Remove Nginx's default website.
 RUN rm -rf /usr/share/nginx/html/*
