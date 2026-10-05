@@ -91,3 +91,21 @@ jobs:
       - name: Build frontend
         working-directory: frontend
         run: npm run build
+
+
+  docker-build:
+    name: Docker Image Build
+    runs-on: ubuntu-24.04
+    needs:
+      - backend
+      - frontend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Build backend image
+        run: docker build -f docker/backend.Dockerfile -t smartcart-backend:ci .
+
+      - name: Build frontend image
+        run: docker build -f docker/frontend.Dockerfile -t smartcart-frontend:ci .
