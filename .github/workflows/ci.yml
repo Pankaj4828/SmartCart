@@ -9,6 +9,9 @@ on:
       - main
 
 jobs:
+  # ============================================================
+  # 1. Backend validation
+  # ============================================================
   backend:
     name: Backend Validation
     runs-on: ubuntu-24.04
@@ -61,6 +64,10 @@ jobs:
         working-directory: backend
         run: pytest
 
+
+  # ============================================================
+  # 2. Frontend validation
+  # ============================================================
   frontend:
     name: Frontend Validation
     runs-on: ubuntu-24.04
@@ -93,58 +100,92 @@ jobs:
         run: npm run build
 
 
+  # ============================================================
+  # 3. Docker build, security scan and publishing
+  # ============================================================
   docker-build:
     name: Docker Build & Security Scan
     runs-on: ubuntu-24.04
 
-    # Build and scan Docker images only after the
-    # application validation jobs have passed.
+    # Docker images are built only after application validation
+    # succeeds.
     needs:
       - backend
       - frontend
 
-    # Required to upload SARIF security results to GitHub.
     permissions:
       contents: read
       security-events: write
 
     steps:
+
       # --------------------------------------------------------
       # 1. Checkout repository
       # --------------------------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      # --------------------------------------------------------
-      # 2. Build backend Docker image
-      # --------------------------------------------------------
-      - name: Build backend image
-        run: |
-          docker build \
-            -f docker/backend.Dockerfile \
-            -t smartcart-backend:ci \
-            .
 
       # --------------------------------------------------------
-      # 3. Build frontend Docker image
+      # 2. Set up Docker Buildx
+      # --------------------------------------------------------
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+
+      # --------------------------------------------------------
+      # 3. Build backend image
+      # --------------------------------------------------------
+      #
+      # load: true
+      #   Loads the built image into the runner's local Docker
+      #   engine so Trivy can scan it.
+      #
+      # push: false
+      #   Do not publish the image yet.
+      #
+      # The image receives:
+      #   - local CI tag
+      #   - latest tag
+      #   - Git commit SHA tag
+      #
+      - name: Build backend image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./docker/backend.Dockerfile
+          load: true
+          push: false
+          tags: |
+            smartcart-backend:ci
+            ${{ secrets.DOCKERHUB_USERNAME }}/smartcart-backend:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/smartcart-backend:${{ github.sha }}
+
+
+      # --------------------------------------------------------
+      # 4. Build frontend image
       # --------------------------------------------------------
       - name: Build frontend image
-        run: |
-          docker build \
-            -f docker/frontend.Dockerfile \
-            -t smartcart-frontend:ci \
-            .
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./docker/frontend.Dockerfile
+          load: true
+          push: false
+          tags: |
+            smartcart-frontend:ci
+            ${{ secrets.DOCKERHUB_USERNAME }}/smartcart-frontend:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/smartcart-frontend:${{ github.sha }}
+
 
       # --------------------------------------------------------
-      # 4. Scan backend image with Trivy
+      # 5. Scan backend image with Trivy
       # --------------------------------------------------------
       #
-      # continue-on-error allows the workflow to continue so
-      # that the frontend image is also scanned.
+      # continue-on-error allows the frontend scan to execute
+      # even if the backend scan finds a problem.
       #
-      # We do NOT ignore the failure permanently.
-      # The final security gate below will fail the job if
-      # this scan reports HIGH/CRITICAL vulnerabilities.
+      # The final security gate below still fails the job.
       #
       - name: Scan backend image with Trivy
         id: backend_scan
@@ -159,26 +200,22 @@ jobs:
           severity: HIGH,CRITICAL
           ignore-unfixed: true
           limit-severities-for-sarif: true
+
           # pip 26.2+ contains an embedded CycloneDX SBOM
           # describing pip's vendored dependencies.
           #
-          # Trivy can scan this SBOM as if those packages were
-          # SmartCart runtime dependencies. They are not installed
-          # application dependencies.
+          # These are not SmartCart application dependencies.
           #
-          # The actual SmartCart Python packages and Debian OS
-          # packages are scanned normally.
+          # The actual SmartCart Python packages and Debian
+          # OS packages continue to be scanned normally.
           skip-files: "**/pip/_vendor/bom.cdx.json"
 
           exit-code: 1
 
+
       # --------------------------------------------------------
-      # 5. Upload backend Trivy report
+      # 6. Upload backend Trivy report
       # --------------------------------------------------------
-      #
-      # The report is uploaded even when the scan finds
-      # vulnerabilities.
-      #
       - name: Upload backend Trivy report
         if: always()
         uses: github/codeql-action/upload-sarif@v4
@@ -186,12 +223,10 @@ jobs:
           sarif_file: trivy-backend.sarif
           category: trivy-backend
 
+
       # --------------------------------------------------------
-      # 6. Scan frontend image with Trivy
+      # 7. Scan frontend image with Trivy
       # --------------------------------------------------------
-      #
-      # This will now execute even if the backend scan failed.
-      #
       - name: Scan frontend image with Trivy
         id: frontend_scan
         continue-on-error: true
@@ -207,8 +242,9 @@ jobs:
           ignore-unfixed: true
           exit-code: 1
 
+
       # --------------------------------------------------------
-      # 7. Upload frontend Trivy report
+      # 8. Upload frontend Trivy report
       # --------------------------------------------------------
       - name: Upload frontend Trivy report
         if: always()
@@ -217,13 +253,10 @@ jobs:
           sarif_file: trivy-frontend.sarif
           category: trivy-frontend
 
+
       # --------------------------------------------------------
-      # 8. Preserve Trivy reports as CI artifacts
+      # 9. Preserve Trivy reports as CI artifacts
       # --------------------------------------------------------
-      #
-      # These files are useful when troubleshooting a failed
-      # security scan.
-      #
       - name: Upload Trivy reports as artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -234,12 +267,12 @@ jobs:
             trivy-frontend.sarif
           retention-days: 30
 
+
       # --------------------------------------------------------
-      # 9. Final security gate
+      # 10. Security gate
       # --------------------------------------------------------
       #
-      # continue-on-error above allowed both scans to execute.
-      # Now we explicitly fail the job if either scan failed.
+      # Both Trivy scans must pass before images are published.
       #
       - name: Enforce security gate
         if: always()
@@ -255,3 +288,40 @@ jobs:
           fi
 
           echo "Trivy security scans passed."
+
+
+      # --------------------------------------------------------
+      # 11. Login to Docker Hub
+      # --------------------------------------------------------
+      #
+      # This step runs only when the security gate succeeds.
+      #
+      - name: Login to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+
+      # --------------------------------------------------------
+      # 12. Push backend image
+      # --------------------------------------------------------
+      #
+      # Push the exact image that was already built and scanned.
+      #
+      - name: Push backend image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/smartcart-backend:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/smartcart-backend:${{ github.sha }}
+
+
+      # --------------------------------------------------------
+      # 13. Push frontend image
+      # --------------------------------------------------------
+      - name: Push frontend image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/smartcart-frontend:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/smartcart-frontend:${{ github.sha }}
