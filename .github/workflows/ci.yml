@@ -97,28 +97,27 @@ jobs:
     name: Docker Build & Security Scan
     runs-on: ubuntu-24.04
 
-    # Docker builds happen only after application validation succeeds.
+    # Build and scan Docker images only after the
+    # application validation jobs have passed.
     needs:
       - backend
       - frontend
 
-    # Required for uploading Trivy SARIF results
-    # to GitHub Code Scanning / Security.
+    # Required to upload SARIF security results to GitHub.
     permissions:
       contents: read
       security-events: write
 
     steps:
-      # 1. Checkout source code
+      # --------------------------------------------------------
+      # 1. Checkout repository
+      # --------------------------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v7
-      # This uses the same Dockerfile that we use locally
-      # and in our Kubernetes deployment.
-      #
-      # :ci is intentionally used because this image is only
-      # being validated here. We are NOT pushing it to a
-      # registry yet.
-      #
+
+      # --------------------------------------------------------
+      # 2. Build backend Docker image
+      # --------------------------------------------------------
       - name: Build backend image
         run: |
           docker build \
@@ -126,8 +125,9 @@ jobs:
             -t smartcart-backend:ci \
             .
 
-      # Again, this is the same Dockerfile used by our project.
-      #
+      # --------------------------------------------------------
+      # 3. Build frontend Docker image
+      # --------------------------------------------------------
       - name: Build frontend image
         run: |
           docker build \
@@ -135,17 +135,20 @@ jobs:
             -t smartcart-frontend:ci \
             .
 
-      # Trivy checks:
-      #   - OS packages
-      #   - Python/application libraries
+      # --------------------------------------------------------
+      # 4. Scan backend image with Trivy
+      # --------------------------------------------------------
       #
-      # HIGH and CRITICAL vulnerabilities with an available
-      # fix will fail this CI job.
+      # continue-on-error allows the workflow to continue so
+      # that the frontend image is also scanned.
       #
-      # SARIF is generated so GitHub can display the findings
-      # in the Security / Code Scanning area.
+      # We do NOT ignore the failure permanently.
+      # The final security gate below will fail the job if
+      # this scan reports HIGH/CRITICAL vulnerabilities.
       #
       - name: Scan backend image with Trivy
+        id: backend_scan
+        continue-on-error: true
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           version: v0.75.0
@@ -157,22 +160,29 @@ jobs:
           ignore-unfixed: true
           exit-code: 1
 
-      # always() is important here.
+      # --------------------------------------------------------
+      # 5. Upload backend Trivy report
+      # --------------------------------------------------------
       #
-      # If Trivy finds a vulnerability and exits with code 1,
-      # the scan step fails. We still want the SARIF report
-      # uploaded so we can inspect the vulnerability.
+      # The report is uploaded even when the scan finds
+      # vulnerabilities.
       #
       - name: Upload backend Trivy report
         if: always()
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy-backend.sarif
+          category: trivy-backend
 
-      # The frontend image is also scanned for OS and
-      # application/library vulnerabilities.
+      # --------------------------------------------------------
+      # 6. Scan frontend image with Trivy
+      # --------------------------------------------------------
+      #
+      # This will now execute even if the backend scan failed.
       #
       - name: Scan frontend image with Trivy
+        id: frontend_scan
+        continue-on-error: true
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           version: v0.75.0
@@ -184,16 +194,22 @@ jobs:
           ignore-unfixed: true
           exit-code: 1
 
-      # Upload even if the Trivy scan fails.
-      #
+      # --------------------------------------------------------
+      # 7. Upload frontend Trivy report
+      # --------------------------------------------------------
       - name: Upload frontend Trivy report
         if: always()
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy-frontend.sarif
+          category: trivy-frontend
 
-      # This gives us a downloadable copy of the reports
-      # in the GitHub Actions run.
+      # --------------------------------------------------------
+      # 8. Preserve Trivy reports as CI artifacts
+      # --------------------------------------------------------
+      #
+      # These files are useful when troubleshooting a failed
+      # security scan.
       #
       - name: Upload Trivy reports as artifacts
         if: always()
@@ -204,3 +220,25 @@ jobs:
             trivy-backend.sarif
             trivy-frontend.sarif
           retention-days: 30
+
+      # --------------------------------------------------------
+      # 9. Final security gate
+      # --------------------------------------------------------
+      #
+      # continue-on-error above allowed both scans to execute.
+      # Now we explicitly fail the job if either scan failed.
+      #
+      - name: Enforce security gate
+        if: always()
+        run: |
+          if [ "${{ steps.backend_scan.outcome }}" != "success" ]; then
+            echo "Backend image failed the Trivy security scan."
+            exit 1
+          fi
+
+          if [ "${{ steps.frontend_scan.outcome }}" != "success" ]; then
+            echo "Frontend image failed the Trivy security scan."
+            exit 1
+          fi
+
+          echo "Trivy security scans passed."
