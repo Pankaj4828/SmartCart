@@ -94,18 +94,73 @@ jobs:
 
 
   docker-build:
-    name: Docker Image Build
+    name: Docker Build & Security Scan
     runs-on: ubuntu-24.04
     needs:
       - backend
       - frontend
 
+    permissions:
+      contents: read
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
 
+      # Build the same backend image that we use in our local
+      # Docker/Kubernetes environment.
       - name: Build backend image
-        run: docker build -f docker/backend.Dockerfile -t smartcart-backend:ci .
+        run: |
+          docker build \
+            -f docker/backend.Dockerfile \
+            -t smartcart-backend:ci \
+            .
 
+      # Build the same frontend image that we use in our local
+      # Docker/Kubernetes environment.
       - name: Build frontend image
-        run: docker build -f docker/frontend.Dockerfile -t smartcart-frontend:ci .
+        run: |
+          docker build \
+            -f docker/frontend.Dockerfile \
+            -t smartcart-frontend:ci \
+            .
+
+      # Scan the backend image for known OS and Python-library
+      # vulnerabilities.
+      - name: Scan backend image with Trivy
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: v0.75.0
+          image-ref: smartcart-backend:ci
+          format: sarif
+          output: trivy-backend.sarif
+          vuln-type: os,library
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: 1
+
+      # Scan the frontend image for known OS and Node/library
+      # vulnerabilities.
+      - name: Scan frontend image with Trivy
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: v0.75.0
+          image-ref: smartcart-frontend:ci
+          format: sarif
+          output: trivy-frontend.sarif
+          vuln-type: os,library
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: 1
+
+      # Preserve the security reports so we can inspect the
+      # exact vulnerabilities when a scan fails.
+      - name: Upload Trivy reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-security-reports
+          path: |
+            trivy-backend.sarif
+            trivy-frontend.sarif
+          retention-days: 30
