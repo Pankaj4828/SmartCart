@@ -158,6 +158,18 @@ jobs:
           vuln-type: os,library
           severity: HIGH,CRITICAL
           ignore-unfixed: true
+
+          # pip 26.2+ contains an embedded CycloneDX SBOM
+          # describing pip's vendored dependencies.
+          #
+          # Trivy can scan this SBOM as if those packages were
+          # SmartCart runtime dependencies. They are not installed
+          # application dependencies.
+          #
+          # The actual SmartCart Python packages and Debian OS
+          # packages are scanned normally.
+          skip-files: "**/pip/_vendor/bom.cdx.json"
+
           exit-code: 1
 
       # --------------------------------------------------------
