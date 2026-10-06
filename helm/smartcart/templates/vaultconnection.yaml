@@ -1,0 +1,14 @@
+# Connection information used by Vault Secrets Operator.
+#
+# Vault itself runs separately in the vault namespace.
+# This resource tells VSO how to reach the Vault service.
+
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultConnection
+
+metadata:
+  name: vault
+
+spec:
+  # Kubernetes DNS name of the Vault service.
+  address: http://vault.vault.svc:8200
