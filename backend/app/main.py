@@ -1,4 +1,5 @@
 from fastapi import Depends, FastAPI, HTTPException
+from prometheus_fastapi_instrumentator import Instrumentator
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import (
@@ -74,6 +75,12 @@ app = FastAPI(
     description="Backend API for the SmartCart AI-powered e-commerce platform",
     version="0.1.0",
 )
+
+# Expose application metrics for Prometheus.
+# This automatically adds the /metrics endpoint and
+# records HTTP request metrics such as request count,
+# response status and request duration.
+Instrumentator().instrument(app).expose(app)
 
 app.include_router(ai_router)
 

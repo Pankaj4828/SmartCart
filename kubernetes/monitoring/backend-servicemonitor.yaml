@@ -1,0 +1,33 @@
+# Prometheus ServiceMonitor for the SmartCart backend.
+#
+# Prometheus Operator discovers this resource and automatically
+# configures Prometheus to scrape the backend /metrics endpoint.
+
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+
+metadata:
+  name: smartcart-backend
+  namespace: monitoring
+
+  labels:
+    # This label allows the kube-prometheus-stack Prometheus
+    # instance to discover this ServiceMonitor.
+    release: monitoring
+
+spec:
+  # ServiceMonitor selects the Kubernetes Service,
+  # not the Pod directly.
+  selector:
+    matchLabels:
+      app: backend
+
+  # The backend Service exists in the smartcart namespace.
+  namespaceSelector:
+    matchNames:
+      - smartcart
+
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
