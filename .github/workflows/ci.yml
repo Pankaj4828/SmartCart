@@ -64,6 +64,22 @@ jobs:
         working-directory: backend
         run: pytest
 
+      # --------------------------------------------------------
+      # Audit Python dependencies for known vulnerabilities
+      # --------------------------------------------------------
+      #
+      # pip-audit checks the versions declared in
+      # backend/requirements.txt against known vulnerability
+      # databases.
+      #
+      # If a vulnerable dependency is found, this step fails
+      # and prevents the Docker stage from running.
+      #
+      - name: Run pip-audit
+        run: |
+          python -m pip install --upgrade pip-audit
+          pip-audit -r backend/requirements.txt
+
 
   # ============================================================
   # 2. Frontend validation
@@ -140,7 +156,7 @@ jobs:
 
 
   # ============================================================
-  # 3. Docker build, security scan and publishing
+  # 4. Docker build, security scan and publishing
   # ============================================================
   docker-build:
     name: Docker Build & Security Scan
@@ -151,6 +167,7 @@ jobs:
     needs:
       - backend
       - frontend
+      - gitleaks
 
     permissions:
       contents: read
