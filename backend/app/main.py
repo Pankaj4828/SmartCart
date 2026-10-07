@@ -1,5 +1,10 @@
 from fastapi import Depends, FastAPI, HTTPException
 from prometheus_fastapi_instrumentator import Instrumentator
+from opentelemetry import trace
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import (
@@ -75,6 +80,28 @@ app = FastAPI(
     description="Backend API for the SmartCart AI-powered e-commerce platform",
     version="0.1.0",
 )
+
+# Configure OpenTelemetry tracing.
+#
+# Traces are exported directly to Grafana Tempo over OTLP/gRPC.
+# Kubernetes DNS resolves the Tempo service using:
+# tempo.tempo.svc.cluster.local:4317
+
+tracer_provider = TracerProvider()
+
+span_exporter = OTLPSpanExporter(
+    endpoint="tempo.tempo.svc.cluster.local:4317",
+    insecure=True,
+)
+
+tracer_provider.add_span_processor(
+    BatchSpanProcessor(span_exporter)
+)
+
+trace.set_tracer_provider(tracer_provider)
+
+# Automatically create traces for FastAPI HTTP requests.
+FastAPIInstrumentor.instrument_app(app)
 
 # Expose application metrics for Prometheus.
 # This automatically adds the /metrics endpoint and
