@@ -4,14 +4,18 @@ on:
   push:
     branches:
       - main
+
   pull_request:
     branches:
       - main
 
+
 jobs:
+
   # ============================================================
   # 1. Backend validation
   # ============================================================
+
   backend:
     name: Backend Validation
     runs-on: ubuntu-24.04
@@ -42,6 +46,7 @@ jobs:
       JWT_ACCESS_TOKEN_EXPIRE_MINUTES: 60
 
     steps:
+
       - name: Checkout repository
         uses: actions/checkout@v7
 
@@ -67,6 +72,7 @@ jobs:
       # --------------------------------------------------------
       # Audit Python dependencies for known vulnerabilities
       # --------------------------------------------------------
+
       #
       # pip-audit checks the versions declared in
       # backend/requirements.txt against known vulnerability
@@ -75,6 +81,7 @@ jobs:
       # If a vulnerable dependency is found, this step fails
       # and prevents the Docker stage from running.
       #
+
       - name: Run pip-audit
         run: |
           python -m pip install --upgrade pip-audit
@@ -84,11 +91,13 @@ jobs:
   # ============================================================
   # 2. Frontend validation
   # ============================================================
+
   frontend:
     name: Frontend Validation
     runs-on: ubuntu-24.04
 
     steps:
+
       - name: Checkout repository
         uses: actions/checkout@v7
 
@@ -115,9 +124,11 @@ jobs:
         working-directory: frontend
         run: npm run build
 
+
   # ============================================================
   # 3. Gitleaks secret scanning
   # ============================================================
+
   gitleaks:
     name: Gitleaks Secret Scan
     runs-on: ubuntu-24.04
@@ -127,16 +138,19 @@ jobs:
       # --------------------------------------------------------
       # 1. Checkout repository
       # --------------------------------------------------------
+
       - name: Checkout repository
         uses: actions/checkout@v7
 
       # --------------------------------------------------------
       # 2. Scan repository files for secrets
       # --------------------------------------------------------
+
       #
       # We intentionally use "dir" instead of "git".
       #
       # dir scans the files currently present in the checkout.
+      #
       # It does not scan our historical Git commits.
       #
       # .env is not committed because it is covered by .gitignore,
@@ -145,6 +159,7 @@ jobs:
       # Historical development credentials are therefore not part
       # of this CI gate.
       #
+
       - name: Run Gitleaks
         run: |
           docker run --rm \
@@ -158,19 +173,21 @@ jobs:
   # ============================================================
   # 4. Docker build, security scan and publishing
   # ============================================================
+
   docker-build:
     name: Docker Build & Security Scan
     runs-on: ubuntu-24.04
 
     # Docker images are built only after application validation
     # succeeds.
+
     needs:
       - backend
       - frontend
       - gitleaks
 
     permissions:
-      contents: read
+      contents: write
       security-events: write
 
     steps:
@@ -178,12 +195,15 @@ jobs:
       # --------------------------------------------------------
       # 1. Checkout repository
       # --------------------------------------------------------
+
       - name: Checkout repository
         uses: actions/checkout@v7
+
 
       # --------------------------------------------------------
       # 2. Run Semgrep SAST
       # --------------------------------------------------------
+
       #
       # Scan only SmartCart application source code.
       #
@@ -191,6 +211,7 @@ jobs:
       # excluded because those areas have separate security
       # controls in this project.
       #
+
       - name: Run Semgrep SAST
         run: |
           docker run --rm \
@@ -205,26 +226,32 @@ jobs:
       # --------------------------------------------------------
       # 3. Set up Docker Buildx
       # --------------------------------------------------------
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
 
       # --------------------------------------------------------
-      # 3. Build backend image
+      # 4. Build backend image
       # --------------------------------------------------------
+
       #
       # load: true
-      #   Loads the built image into the runner's local Docker
-      #   engine so Trivy can scan it.
+      #
+      # Loads the built image into the runner's local Docker
+      # engine so Trivy can scan it.
       #
       # push: false
-      #   Do not publish the image yet.
+      #
+      # Do not publish the image yet.
       #
       # The image receives:
+      #
       #   - local CI tag
       #   - latest tag
       #   - Git commit SHA tag
       #
+
       - name: Build backend image
         uses: docker/build-push-action@v7
         with:
@@ -239,8 +266,9 @@ jobs:
 
 
       # --------------------------------------------------------
-      # 4. Build frontend image
+      # 5. Build frontend image
       # --------------------------------------------------------
+
       - name: Build frontend image
         uses: docker/build-push-action@v7
         with:
@@ -255,14 +283,16 @@ jobs:
 
 
       # --------------------------------------------------------
-      # 5. Scan backend image with Trivy
+      # 6. Scan backend image with Trivy
       # --------------------------------------------------------
+
       #
       # continue-on-error allows the frontend scan to execute
       # even if the backend scan finds a problem.
       #
       # The final security gate below still fails the job.
       #
+
       - name: Scan backend image with Trivy
         id: backend_scan
         continue-on-error: true
@@ -284,14 +314,16 @@ jobs:
           #
           # The actual SmartCart Python packages and Debian
           # OS packages continue to be scanned normally.
+
           skip-files: "**/pip/_vendor/bom.cdx.json"
 
           exit-code: 1
 
 
       # --------------------------------------------------------
-      # 6. Upload backend Trivy report
+      # 7. Upload backend Trivy report
       # --------------------------------------------------------
+
       - name: Upload backend Trivy report
         if: always()
         uses: github/codeql-action/upload-sarif@v4
@@ -301,8 +333,9 @@ jobs:
 
 
       # --------------------------------------------------------
-      # 7. Scan frontend image with Trivy
+      # 8. Scan frontend image with Trivy
       # --------------------------------------------------------
+
       - name: Scan frontend image with Trivy
         id: frontend_scan
         continue-on-error: true
@@ -320,8 +353,9 @@ jobs:
 
 
       # --------------------------------------------------------
-      # 8. Upload frontend Trivy report
+      # 9. Upload frontend Trivy report
       # --------------------------------------------------------
+
       - name: Upload frontend Trivy report
         if: always()
         uses: github/codeql-action/upload-sarif@v4
@@ -331,8 +365,9 @@ jobs:
 
 
       # --------------------------------------------------------
-      # 9. Preserve Trivy reports as CI artifacts
+      # 10. Preserve Trivy reports as CI artifacts
       # --------------------------------------------------------
+
       - name: Upload Trivy reports as artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -345,11 +380,13 @@ jobs:
 
 
       # --------------------------------------------------------
-      # 10. Security gate
+      # 11. Security gate
       # --------------------------------------------------------
+
       #
       # Both Trivy scans must pass before images are published.
       #
+
       - name: Enforce security gate
         if: always()
         run: |
@@ -367,11 +404,13 @@ jobs:
 
 
       # --------------------------------------------------------
-      # 11. Login to Docker Hub
+      # 12. Login to Docker Hub
       # --------------------------------------------------------
+
       #
       # This step runs only when the security gate succeeds.
       #
+
       - name: Login to Docker Hub
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: docker/login-action@v4
@@ -381,11 +420,13 @@ jobs:
 
 
       # --------------------------------------------------------
-      # 12. Push backend image
+      # 13. Push backend image
       # --------------------------------------------------------
+
       #
       # Push the exact image that was already built and scanned.
       #
+
       - name: Push backend image
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
@@ -394,10 +435,80 @@ jobs:
 
 
       # --------------------------------------------------------
-      # 13. Push frontend image
+      # 14. Push frontend image
       # --------------------------------------------------------
+
+      #
+      # Push the exact image that was already built and scanned.
+      #
+
       - name: Push frontend image
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/smartcart-frontend:latest
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/smartcart-frontend:${{ github.sha }}
+
+
+      # --------------------------------------------------------
+      # 15. Update Helm image tags
+      # --------------------------------------------------------
+
+      #
+      # yq understands YAML structure.
+      #
+      # We update the Helm values only after:
+      #
+      #   1. Application validation passed
+      #   2. Security scans passed
+      #   3. Docker images were successfully pushed
+      #
+      # The Git commit SHA is used as the immutable image tag.
+      #
+
+      - name: Update backend Helm image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: mikefarah/yq@master
+        with:
+          cmd: yq -i '.backend.image.repository = "${{ secrets.DOCKERHUB_USERNAME }}/smartcart-backend" | .backend.image.tag = "${{ github.sha }}"' helm/smartcart/values.yaml
+
+
+      - name: Update frontend Helm image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: mikefarah/yq@master
+        with:
+          cmd: yq -i '.frontend.image.repository = "${{ secrets.DOCKERHUB_USERNAME }}/smartcart-frontend" | .frontend.image.tag = "${{ github.sha }}"' helm/smartcart/values.yaml
+
+
+      # --------------------------------------------------------
+      # 16. Show updated Helm values
+      # --------------------------------------------------------
+
+      - name: Show updated Helm values
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          echo "Updated Helm values:"
+          cat helm/smartcart/values.yaml
+
+
+      # --------------------------------------------------------
+      # 17. Commit GitOps update
+      # --------------------------------------------------------
+
+      #
+      # Commit the new image version back to GitHub.
+      #
+      # Argo CD will later detect this Git change and deploy
+      # the new image to Kubernetes.
+      #
+
+      - name: Commit GitOps update
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add helm/smartcart/values.yaml
+
+          git commit -m "chore: update image to ${GITHUB_SHA} [skip ci]" || exit 0
+
+          git push
