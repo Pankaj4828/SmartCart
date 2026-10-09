@@ -1,7 +1,8 @@
+
 # Authentication configuration for Vault Secrets Operator.
 #
-# VSO uses the SmartCart Kubernetes ServiceAccount
-# to authenticate against Vault's Kubernetes auth method.
+# VSO uses the SmartCart ServiceAccount to authenticate
+# against Vault's Kubernetes authentication method.
 
 apiVersion: secrets.hashicorp.com/v1beta1
 kind: VaultAuth
@@ -16,12 +17,12 @@ spec:
   # Authenticate using Kubernetes ServiceAccount tokens.
   method: kubernetes
 
-  # Vault authentication mount enabled for SmartCart.
+  # Vault Kubernetes authentication mount.
   mount: kubernetes
 
   kubernetes:
-    # Vault role configured for SmartCart.
-    role: smartcart-helm
+    # Select the Vault role through Helm values.
+    role: {{ .Values.vault.role | quote }}
 
-    # ServiceAccount whose token VSO uses.
+    # ServiceAccount used for Vault authentication.
     serviceAccount: smartcart-vault

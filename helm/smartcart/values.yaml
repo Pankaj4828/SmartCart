@@ -31,3 +31,6 @@ ingress:
   host: smartcart-helm.local
   proxyReadTimeout: "180"
   proxySendTimeout: "180"
+# Vault authentication configuration
+vault:
+  role: smartcart-helm
