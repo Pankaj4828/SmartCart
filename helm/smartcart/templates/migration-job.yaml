@@ -12,6 +12,8 @@ kind: Job
 
 metadata:
   name: smartcart-db-migration
+  annotations:
+    argocd.argoproj.io/sync-options: Force=true,Replace=true
 
 spec:
   # Retry the migration if the Job temporarily fails.
