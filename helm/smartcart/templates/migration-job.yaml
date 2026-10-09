@@ -25,6 +25,28 @@ spec:
     spec:
       # Jobs run once and then finish.
       restartPolicy: Never
+      
+      initContainers:
+        - name: wait-for-postgres
+          image: "{{ .Values.postgres.image.repository }}:{{ .Values.postgres.image.tag }}"
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready -h postgres -p 5432 -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do
+                echo "Waiting for PostgreSQL..."
+                sleep 2
+              done
+              echo "PostgreSQL is ready."
+          envFrom:
+            - configMapRef:
+                name: smartcart-config
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: smartcart-secrets
+                  key: POSTGRES_USER
 
       containers:
         - name: migration

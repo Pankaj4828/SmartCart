@@ -79,6 +79,20 @@ spec:
               cpu: "500m"
               memory: "512Mi"
 
+          # Report ready only when PostgreSQL accepts connections.
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - smartcart
+                - -d
+                - smartcart
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 6
+
           # Check whether PostgreSQL is accepting connections.
           #
           # If PostgreSQL becomes unhealthy and this repeatedly fails,
