@@ -3,12 +3,12 @@
 backend:
   image:
     repository: pankajbehera/smartcart-backend
-    tag: "e3df12c17829732b78a85554f6b150b5881ae4fc"
+    tag: "9c82aad845914e852bae41eda38b75ae6b322d97"
   replicas: 1
 frontend:
   image:
     repository: pankajbehera/smartcart-frontend
-    tag: "e3df12c17829732b78a85554f6b150b5881ae4fc"
+    tag: "9c82aad845914e852bae41eda38b75ae6b322d97"
   replicas: 1
 ollama:
   image:
