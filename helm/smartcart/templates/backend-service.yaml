@@ -11,6 +11,8 @@ kind: Service
 
 metadata:
   name: backend
+  labels:
+    app: backend
 
 spec:
   # ClusterIP makes the backend reachable only

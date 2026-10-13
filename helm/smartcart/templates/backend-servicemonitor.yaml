@@ -1,0 +1,19 @@
+
+# Prometheus ServiceMonitor for the Helm-managed SmartCart backend.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: smartcart-backend
+  labels:
+    release: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: backend
+  namespaceSelector:
+    matchNames:
+      - smartcart-gitops
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
