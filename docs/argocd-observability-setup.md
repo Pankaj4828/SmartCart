@@ -360,6 +360,76 @@ git status --short
 
 Inspect the full current file before changing it. Commit only the intended files. Do not include unrelated raw Kubernetes manifests or temporary files.
 
+
+## Accessing Argo CD, Grafana, and Prometheus Locally
+
+These services run inside the local KIND Kubernetes cluster. Use `kubectl port-forward` to access their web UIs from your browser.
+
+### 1. Argo CD
+
+**Port-forward command**
+
+```bash
+kubectl port-forward -n argocd svc/argocd-server 8082:443
+```
+
+**Open in browser:** https://localhost:8082
+
+**Username:** `admin`
+
+**Retrieve the initial admin password**
+
+```bash
+kubectl get secret argocd-initial-admin-secret -n argocd \
+  -o jsonpath='{.data.password}' | base64 --decode; echo
+```
+
+### 2. Grafana
+
+**Port-forward command**
+
+```bash
+kubectl port-forward -n monitoring svc/monitoring-grafana 3000:80
+```
+
+**Open in browser:** http://127.0.0.1:3000
+
+**Username**
+
+```bash
+kubectl get secret -n monitoring monitoring-grafana \
+  -o jsonpath='{.data.admin-user}' | base64 --decode; echo
+```
+
+**Retrieve the admin password**
+
+```bash
+kubectl get secret -n monitoring monitoring-grafana \
+  -o jsonpath='{.data.admin-password}' | base64 --decode; echo
+```
+
+### 3. Prometheus
+
+**Port-forward command**
+
+```bash
+kubectl port-forward -n monitoring \
+  svc/monitoring-kube-prometheus-prometheus 9090:9090
+```
+
+**Open in browser:** http://127.0.0.1:9090
+
+Prometheus can be accessed directly through this local port-forward. No separate login credentials were configured in our documented setup.
+
+### Important Notes
+
+- Run each port-forward command in a separate terminal and keep that terminal open while using the service.
+- Press `Ctrl+C` in the corresponding terminal to stop a port-forward.
+- If a port-forward stops, run its command again.
+- These commands assume the KIND cluster and the relevant Kubernetes services are running.
+- The Argo CD password command retrieves the **initial admin password**, if the corresponding Secret still exists.
+- Do not commit retrieved passwords or other credentials to GitHub or your Markdown documentation.
+
 # Part D — Recorded status
 
 ## Confirmed in the project record
