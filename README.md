@@ -85,7 +85,7 @@ Screenshot of the running e-commerce application.
 
 Argo CD application view showing the synchronization status, health status, and deployed Kubernetes resources.
 
-![Argo CD SmartCart Application](docs/screenshots/argocd-application..png)
+![Argo CD SmartCart Application](docs/screenshots/argocd-application.png)
 
 ### 3. Grafana Monitoring
 
@@ -97,7 +97,7 @@ Grafana dashboard showing SmartCart application metrics and infrastructure monit
 
 GitHub Actions workflow showing the CI/CD pipeline and its execution results.
 
-![GitHub Actions CI/CD Pipeline](docs/screenshots/cicd-pipeline..png)
+![GitHub Actions CI/CD Pipeline](docs/screenshots/cicd-pipeline.png)
 
 ## Project Status
 
