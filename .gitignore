@@ -77,3 +77,6 @@ htmlcov/
 *.tmp
 *.temp
 *.swp
+
+# Local Terraform plan files
+terraform/environments/dev/tfplan

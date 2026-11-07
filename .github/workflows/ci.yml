@@ -4,10 +4,16 @@ on:
   push:
     branches:
       - main
+      - terra-aws
+    paths-ignore:
+      - '**/*.md'
 
   pull_request:
     branches:
       - main
+      - terra-aws
+    paths-ignore:
+      - '**/*.md'
 
 
 jobs:
@@ -512,3 +518,46 @@ jobs:
           git commit -m "chore: update image to ${GITHUB_SHA} [skip ci]" || exit 0
 
           git push
+  # ============================================================
+  # Terraform formatting and validation
+  # ============================================================
+
+  terraform-validation:
+    name: Terraform Validation
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: "1.16.2"
+
+      - name: Check Terraform formatting
+        run: terraform fmt -check -recursive terraform
+
+      - name: Validate bootstrap configuration
+        working-directory: terraform/bootstrap
+        run: |
+          terraform init -backend=false
+          terraform validate
+
+      - name: Validate EKS module
+        working-directory: terraform/modules/eks
+        run: |
+          terraform init -backend=false
+          terraform validate
+
+      - name: Validate IAM module
+        working-directory: terraform/modules/iam
+        run: |
+          terraform init -backend=false
+          terraform validate
+
+      - name: Validate development environment
+        working-directory: terraform/environments/dev
+        run: |
+          terraform init -backend=false
+          terraform validate
