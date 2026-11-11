@@ -65,6 +65,7 @@ spec:
           volumeMounts:
             - name: postgres-data
               mountPath: /var/lib/postgresql/data
+              subPath: postgres
 
           # Requests help Kubernetes schedule the PostgreSQL Pod.
           # Limits prevent it from consuming unlimited resources.
