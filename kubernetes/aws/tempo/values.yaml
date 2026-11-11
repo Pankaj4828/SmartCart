@@ -1,0 +1,28 @@
+
+# SmartCart AWS EKS distributed tracing
+# Chart: grafana-community/tempo 3.2.1
+# Application: Tempo 3.1.1
+
+replicas: 1
+
+tempo:
+  reportingEnabled: false
+  retention: 24h
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+persistence:
+  enabled: true
+  storageClassName: gp3
+  accessModes:
+    - ReadWriteOnce
+  size: 5Gi
+
+service:
+  type: ClusterIP

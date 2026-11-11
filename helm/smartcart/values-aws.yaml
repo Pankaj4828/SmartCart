@@ -1,0 +1,14 @@
+# AWS EKS-specific SmartCart configuration.
+# Local KIND defaults remain unchanged in values.yaml.
+
+postgres:
+  storageClassName: gp3
+
+ollamaStorageClassName: gp3
+
+ingress:
+  enabled: false
+
+vault:
+  role: smartcart-eks
+  address: http://vault.vault.svc:8200

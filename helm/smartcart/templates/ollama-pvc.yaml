@@ -21,4 +21,4 @@ spec:
       storage: {{ .Values.ollamaStorage }}
 
   # KIND's local cluster provides the standard StorageClass.
-  storageClassName: standard
+  storageClassName: {{ .Values.ollamaStorageClassName | quote }}

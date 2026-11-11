@@ -80,3 +80,6 @@ htmlcov/
 
 # Local Terraform plan files
 terraform/environments/dev/tfplan
+
+# Local Terraform backend configuration
+terraform/environments/dev/backend.hcl

@@ -8,9 +8,9 @@ variable "github_repository" {
   type        = string
 }
 
-variable "github_actions_branch" {
-  description = "Branch allowed to assume the GitHub Actions IAM role"
-  type        = string
+variable "github_actions_branches" {
+  description = "Branches allowed to assume the GitHub Actions IAM role"
+  type        = list(string)
 }
 
 variable "eks_cluster_arn" {

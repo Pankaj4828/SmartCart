@@ -19,8 +19,10 @@ data "aws_iam_policy_document" "github_actions_trust" {
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
+
       values = [
-        "repo:${var.github_repository}:ref:refs/heads/${var.github_actions_branch}"
+        for branch in var.github_actions_branches :
+        "repo:${var.github_repository}:ref:refs/heads/${branch}"
       ]
     }
   }

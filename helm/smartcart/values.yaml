@@ -20,11 +20,13 @@ postgres:
     repository: postgres
     tag: "17-alpine"
   storage: 2Gi
+  storageClassName: standard
 hpa:
   minReplicas: 1
   maxReplicas: 3
   cpuTarget: 70
 ollamaStorage: 5Gi
+ollamaStorageClassName: standard
 ingress:
   enabled: true
   className: nginx
@@ -33,4 +35,5 @@ ingress:
   proxySendTimeout: "180"
 # Vault authentication configuration
 vault:
+  address: http://vault.vault.svc:8200
   role: smartcart-helm

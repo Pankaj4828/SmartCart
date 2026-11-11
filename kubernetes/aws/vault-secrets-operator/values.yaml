@@ -1,0 +1,5 @@
+# AWS EKS configuration for SmartCart Vault Secrets Operator.
+# Chart: hashicorp/vault-secrets-operator 1.6.2
+
+controller:
+  replicas: 1

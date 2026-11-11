@@ -11,4 +11,4 @@ metadata:
 
 spec:
   # Kubernetes DNS name of the Vault service.
-  address: http://vault.vault.svc:8200
+  address: {{ .Values.vault.address | quote }}

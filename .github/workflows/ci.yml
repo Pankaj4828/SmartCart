@@ -518,6 +518,45 @@ jobs:
           git commit -m "chore: update image to ${GITHUB_SHA} [skip ci]" || exit 0
 
           git push
+
+
+
+      # --------------------------------------------------------
+      # 18. Sync image tags to AWS branch
+      # --------------------------------------------------------
+
+      - name: Checkout AWS branch
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git fetch origin terra-aws
+          git checkout -B terra-aws FETCH_HEAD
+
+      - name: Update AWS backend image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: mikefarah/yq@master
+        with:
+          cmd: yq -i '.backend.image.repository = "${{ secrets.DOCKERHUB_USERNAME }}/smartcart-backend" | .backend.image.tag = "${{ github.sha }}"' helm/smartcart/values.yaml
+
+      - name: Update AWS frontend image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: mikefarah/yq@master
+        with:
+          cmd: yq -i '.frontend.image.repository = "${{ secrets.DOCKERHUB_USERNAME }}/smartcart-frontend" | .frontend.image.tag = "${{ github.sha }}"' helm/smartcart/values.yaml
+
+      - name: Commit AWS GitOps update
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git add helm/smartcart/values.yaml
+          git diff --cached --quiet && exit 0
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git commit -m "chore: update AWS image tags to ${GITHUB_SHA} [skip ci]"
+          git push origin terra-aws
+
+
+
   # ============================================================
   # Terraform formatting and validation
   # ============================================================
@@ -561,3 +600,48 @@ jobs:
         run: |
           terraform init -backend=false
           terraform validate
+
+
+  # ============================================================
+  # AWS OIDC authentication validation
+  # ============================================================
+
+
+  aws-oidc-validation:
+    name: AWS OIDC & EKS Validation
+    runs-on: ubuntu-24.04
+
+    if: >-
+      vars.AWS_EKS_VALIDATION_ENABLED == 'true' &&
+      github.event_name == 'push' &&
+      (github.ref == 'refs/heads/main' ||
+       github.ref == 'refs/heads/terra-aws')
+
+    needs:
+      - backend
+      - frontend
+      - gitleaks
+      - docker-build
+      - terraform-validation
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Configure AWS credentials using GitHub OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/${{ vars.AWS_GITHUB_ACTIONS_ROLE_NAME }}
+          aws-region: us-west-2
+
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity
+
+      - name: Verify EKS cluster
+        run: |
+          aws eks describe-cluster \
+            --name smartcart-dev \
+            --region us-west-2 \
+            --query 'cluster.{Name:name,Status:status,Version:version}' \
+            --output table

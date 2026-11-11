@@ -40,11 +40,11 @@ module "eks" {
 module "github_actions_iam" {
   source = "../../modules/iam"
 
-  role_name             = "${local.name_prefix}-github-actions-deploy"
-  github_repository     = "Pankaj4828/SmartCart"
-  github_actions_branch = "main"
-  eks_cluster_arn       = module.eks.cluster_arn
-  tags                  = local.common_tags
+  role_name               = "${local.name_prefix}-github-actions-deploy"
+  github_repository       = "Pankaj4828/SmartCart"
+  github_actions_branches = ["main", "terra-aws"]
+  eks_cluster_arn         = module.eks.cluster_arn
+  tags                    = local.common_tags
 }
 
 resource "aws_eks_access_entry" "github_actions" {
@@ -61,7 +61,7 @@ resource "aws_eks_access_policy_association" "github_actions" {
 
   access_scope {
     type       = "namespace"
-    namespaces = ["smartcart"]
+    namespaces = ["smartcart-gitops"]
   }
 
   depends_on = [aws_eks_access_entry.github_actions]
