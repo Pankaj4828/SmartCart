@@ -15,7 +15,6 @@ The project follows a local-first approach: the application is developed and ope
 | Frontend | React + TypeScript | E-commerce user interface |
 | Backend | Python + FastAPI | REST APIs and application logic |
 | Database | PostgreSQL | Persistent relational data |
-| Cache | Redis | In-memory application support |
 | AI runtime | Ollama | Local model runtime for the AI assistant |
 
 ## DevOps and Platform Stack
